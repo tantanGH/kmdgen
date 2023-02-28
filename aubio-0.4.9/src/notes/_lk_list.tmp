@@ -1,0 +1,6 @@
+_build/notes.o
+CLIB.L
+DOSLIB.L
+IOCSLIB.L
+FLOATFNC.L
+libgcc.a

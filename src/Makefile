@@ -28,8 +28,11 @@ DOCUMENT_FILE = KMDGEN.DOC
 # Distribution package 
 PACKAGE_FILE = ../KMDGN010.ZIP
 
+# aubio library path
+AUBIO_DIR = ../aubio-0.4.9/src
+
 # ヘッダ検索パス
-INCLUDE_FLAGS = -I${XDEV68K_DIR}/include/xc -I${XDEV68K_DIR}/include/xdev68k -I${XDEV68K_DIR}/include/aubio
+INCLUDE_FLAGS = -I${XDEV68K_DIR}/include/xc -I${XDEV68K_DIR}/include/xdev68k -I${AUBIO_DIR}
 
 # コンパイルフラグ
 COMMON_FLAGS = -m68000 -Os $(INCLUDE_FLAGS)
@@ -40,13 +43,15 @@ CFLAGS = $(COMMON_FLAGS) -fno-conserve-stack -Wno-builtin-declaration-mismatch -
 				-DHAVE_CONFIG_H -DHAVE_AUBIO_DOUBLE=1
 
 # *.c ソースファイル
-C_SRCS = himem.c pcm.c adpcm.c nas_adpcm.c main.c
+C_SRCS = himem.c main.c
 
 # *.s ソースファイル
-ASM_SRCS = nas_adpcmlib.s
+ASM_SRCS = 
+#nas_adpcmlib.s
 
 # *.h source files
-HEADER_SRCS = himem.h pcm.h adpcm.h nas_macro.h nas_adpcm.h kmdgen.h
+HEADER_SRCS = himem.h kmdgen.h
+#himem.h pcm.h adpcm.h nas_macro.h nas_adpcm.h kmdgen.h
 
 # リンク対象のライブラリファイル
 LIBS =\
@@ -54,10 +59,61 @@ LIBS =\
 	${XDEV68K_DIR}/lib/xc/DOSLIB.L \
 	${XDEV68K_DIR}/lib/xc/IOCSLIB.L \
 	${XDEV68K_DIR}/lib/xc/FLOATFNC.L \
-	${XDEV68K_DIR}/lib/aubio/libaubio.a \
+	${AUBIO_DIR}/io/_build/audio_unit.o \
+	${AUBIO_DIR}/io/_build/ioutils.o \
+	${AUBIO_DIR}/io/_build/source_s44read.o \
+	${AUBIO_DIR}/io/_build/source_wavread.o \
+	${AUBIO_DIR}/io/_build/source.o \
+	${AUBIO_DIR}/onset/_build/onset.o \
+	${AUBIO_DIR}/onset/_build/peakpicker.o \
+	${AUBIO_DIR}/spectral/_build/awhitening.o \
+	${AUBIO_DIR}/spectral/_build/dct_accelerate.o \
+	${AUBIO_DIR}/spectral/_build/dct_fftw.o \
+	${AUBIO_DIR}/spectral/_build/dct_ipp.o \
+	${AUBIO_DIR}/spectral/_build/dct_ooura.o \
+	${AUBIO_DIR}/spectral/_build/dct_plain.o \
+	${AUBIO_DIR}/spectral/_build/dct.o \
+	${AUBIO_DIR}/spectral/_build/fft.o \
+	${AUBIO_DIR}/spectral/_build/filterbank_mel.o \
+	${AUBIO_DIR}/spectral/_build/filterbank.o \
+	${AUBIO_DIR}/spectral/_build/mfcc.o \
+	${AUBIO_DIR}/spectral/_build/ooura_fft8g.o \
+	${AUBIO_DIR}/spectral/_build/phasevoc.o \
+	${AUBIO_DIR}/spectral/_build/specdesc.o \
+	${AUBIO_DIR}/spectral/_build/statistics.o \
+	${AUBIO_DIR}/spectral/_build/tss.o \
+	${AUBIO_DIR}/tempo/_build/beattracking.o \
+	${AUBIO_DIR}/tempo/_build/tempo.o \
+	${AUBIO_DIR}/temporal/_build/a_weighting.o \
+	${AUBIO_DIR}/temporal/_build/biquad.o \
+	${AUBIO_DIR}/temporal/_build/c_weighting.o \
+	${AUBIO_DIR}/temporal/_build/filter.o \
+	${AUBIO_DIR}/temporal/_build/resampler.o \
+	${AUBIO_DIR}/utils/_build/hist.o \
+	${AUBIO_DIR}/utils/_build/log.o \
+	${AUBIO_DIR}/utils/_build/parameter.o \
+	${AUBIO_DIR}/utils/_build/scale.o \
+	${AUBIO_DIR}/utils/_build/strutils.o \
+	${AUBIO_DIR}/_build/cvec.o \
+	${AUBIO_DIR}/_build/fmat.o \
+	${AUBIO_DIR}/_build/fvec.o \
+	${AUBIO_DIR}/_build/lvec.o \
+	${AUBIO_DIR}/_build/mathutils.o \
+	${AUBIO_DIR}/_build/musicutils.o \
+	${AUBIO_DIR}/_build/vecutils.o \
 	${XDEV68K_DIR}/lib/m68k_elf/m68000/libgcc.a
 
-#	${XDEV68K_DIR}/lib/mad/libmad-optspeed.a \
+#	${AUBIO_DIR}/notes/_build/notes.o \
+	${AUBIO_DIR}/pitch/_build/pitch.o \
+	${AUBIO_DIR}/pitch/_build/pitchfcomb.o \
+	${AUBIO_DIR}/pitch/_build/pitchmcomb.o \
+	${AUBIO_DIR}/pitch/_build/pitchschmitt.o \
+	${AUBIO_DIR}/pitch/_build/pitchspecacf.o \
+	${AUBIO_DIR}/pitch/_build/pitchyin.o \
+	${AUBIO_DIR}/pitch/_build/pitchyinfast.o \
+	${AUBIO_DIR}/pitch/_build/pitchyinfft.o \
+ 	${AUBIO_DIR}/synth/_build/sampler.o \
+	${AUBIO_DIR}/synth/_build/wavetable.o \
 
 # 中間ファイル生成用ディレクトリ
 INTERMEDIATE_DIR = _build

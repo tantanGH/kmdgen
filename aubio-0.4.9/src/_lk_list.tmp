@@ -1,0 +1,12 @@
+_build/cvec.o
+_build/fmat.o
+_build/fvec.o
+_build/lvec.o
+_build/mathutils.o
+_build/musicutils.o
+_build/vecutils.o
+CLIB.L
+DOSLIB.L
+IOCSLIB.L
+FLOATFNC.L
+libgcc.a

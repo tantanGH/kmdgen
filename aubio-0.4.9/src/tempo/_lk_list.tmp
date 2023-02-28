@@ -1,0 +1,7 @@
+_build/beattracking.o
+_build/tempo.o
+CLIB.L
+DOSLIB.L
+IOCSLIB.L
+FLOATFNC.L
+libgcc.a

@@ -1,0 +1,11 @@
+_build/hist.o
+_build/log.o
+_build/parameter.o
+_build/scale.o
+_build/strutils.o
+_build/windll.o
+CLIB.L
+DOSLIB.L
+IOCSLIB.L
+FLOATFNC.L
+libgcc.a

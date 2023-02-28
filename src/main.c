@@ -7,9 +7,9 @@
 #include <iocslib.h>
 #include <aubio.h>
 #include "himem.h"
-#include "pcm.h"
-#include "adpcm.h"
-#include "nas_adpcm.h"
+//#include "pcm.h"
+//#include "adpcm.h"
+//#include "nas_adpcm.h"
 #include "kmdgen.h"
 
 // show help message
@@ -44,9 +44,6 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   // output file name
   static uint8_t out_file_name[ MAX_PATH_LEN ];
   out_file_name[0] = '\0';
-
-  // xtract buffer
-  float* xtract_pcm_buffer = NULL;
 
   for (int16_t i = 1; i < argc; i++) {
     if (argv[i][0] == '-' && strlen(argv[i]) >= 2) {
@@ -91,9 +88,9 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   uint8_t* pcm_file_exp = pcm_file_name + strlen(pcm_file_name) - 4;
 
   // input format check
-  int32_t pcm_freq = 15625;
-  int16_t pcm_channels = 1;
-  int16_t pcm_format = FORMAT_ADPCM;
+  int32_t pcm_freq = 44100;
+  int16_t pcm_channels = 2;
+  int16_t pcm_format = FORMAT_PCM;
   if (stricmp(".s32", pcm_file_exp) == 0) {
     pcm_freq = 32000;
     pcm_channels = 2;
@@ -118,6 +115,10 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
     pcm_freq = 48000;
     pcm_channels = 1;
     pcm_format = FORMAT_PCM;
+  } else if (stricmp(".wav", pcm_file_exp) == 0) {
+    pcm_freq = 0;
+    pcm_channels = 0;
+    pcm_format = FORMAT_WAVE;
 /*
   } else if (stricmp(".a32", pcm_file_exp) == 0) {
     pcm_freq = 32000;
@@ -150,11 +151,6 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
 */
   }
 
-  // encoder, decoder and chain tables
-  ADPCM_DECODE_HANDLE adpcm_decoder = { 0 };
-  PCM_DECODE_HANDLE pcm_decoder = { 0 };
-  NAS_ADPCM_DECODE_HANDLE nas_adpcm_decoder = { 0 };
-
   // open file
   FILE* fp = fopen(pcm_file_name, "rb");
 
@@ -162,6 +158,12 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   fseek(fp, 0, SEEK_END);
   size_t pcm_file_size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
+
+/*
+  // encoder, decoder and chain tables
+  ADPCM_DECODE_HANDLE adpcm_decoder = { 0 };
+  PCM_DECODE_HANDLE pcm_decoder = { 0 };
+  NAS_ADPCM_DECODE_HANDLE nas_adpcm_decoder = { 0 };
 
   // init adpcm encoder
   if (pcm_format == FORMAT_ADPCM) {
@@ -186,22 +188,29 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
       goto catch;
     }
   }
+*/
+
+
+  aubio_source_t* aubio_source = new_aubio_source(pcm_file_name, pcm_freq, AUBIO_HOP_SIZE);
+
+  if (pcm_freq == 0) {
+    pcm_freq = aubio_source_get_samplerate(aubio_source);
+  }
+  if (pcm_channels == 0) {
+    pcm_channels = aubio_source_get_channels(aubio_source);
+  }
 
   // describe source file information
   printf("\n");
   printf("File name     : %s\n", pcm_file_name);
   printf("Data size     : %d [bytes]\n", pcm_file_size);
   printf("Data format   : %s\n", 
-      pcm_format == FORMAT_ADPCM ? "X68k(MSM6258V) ADPCM" : 
-      pcm_format == FORMAT_PCM && use_little_endian ? "16bit signed raw PCM (little endian)" :
-      pcm_format == FORMAT_PCM && !use_little_endian ? "16bit signed raw PCM (big endian)" :
-      pcm_format == FORMAT_NAS_ADPCM ? "YM2608 ADPCM" :
-      "X68k(MSM6258V) ADPCM");
+            pcm_format == FORMAT_WAVE ? "WAVE" : 
+            "16bit signed raw PCM (big endian)");
 
-  float pcm_1sec_size = pcm_freq * pcm_channels * (pcm_format == FORMAT_PCM ? 2 : 0.5);
   printf("PCM frequency : %d [Hz]\n", pcm_freq);
   printf("PCM channels  : %s\n", pcm_channels == 1 ? "mono" : "stereo");
-  printf("PCM length    : %4.2f [sec]\n", (float)pcm_file_size / pcm_1sec_size);
+  printf("PCM length    : %4.2f [sec]\n", aubio_source_get_duration(aubio_source));
 
   float* decode_buffer = (float*)himem_malloc( AUBIO_FRAME_SIZE * pcm_channels * sizeof(float), 0);
 
@@ -218,8 +227,6 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
 
   //printf("Measure\tStart Time\tEnd Time\n");
 
-  aubio_source_t* aubio_source = new_aubio_source(pcm_file_name, pcm_freq, AUBIO_HOP_SIZE);
-
   // create some vectors
 //  fvec_t * in = new_fvec (AUBIO_HOP_SIZE); // input audio buffer
   fvec_t * aubio_out = new_fvec (1); // output position
@@ -227,7 +234,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
 //  aubio_tempo_t * o = new_aubio_tempo("default", AUBIO_FRAME_SIZE, AUBIO_HOP_SIZE, pcm_freq);
 
   printf("\n");
-/*
+
   do {
     printf("\rAnalyzing ... %d frames",n_frames);
     if (B_SFTSNS() & 0x01) break;
@@ -249,8 +256,8 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
       n_frames * 1. / pcm_freq,
       n_frames, pcm_freq,
       n_frames / AUBIO_HOP_SIZE, pcm_file_name);
-*/
 
+/*
   fvec_t* tempo_out = new_fvec(2);
 
   do {
@@ -289,7 +296,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
 
 
     del_fvec(tempo_out);
-
+*/
   rc = 0;
 
 catch:
@@ -316,7 +323,7 @@ catch:
     fclose(fp);
     fp = NULL;
   }
-
+/*
   // close adpcm decoder
   if (pcm_format == FORMAT_ADPCM) {
     adpcm_close(&adpcm_decoder);
@@ -331,7 +338,7 @@ catch:
   if (pcm_format == FORMAT_NAS_ADPCM) {
     nas_adpcm_close(&nas_adpcm_decoder);
   }
-
+*/
 exit:
   return rc;
 }
