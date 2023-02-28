@@ -5,8 +5,7 @@
 #include <stat.h>
 #include <doslib.h>
 #include <iocslib.h>
-#include <math.h>
-#include <libxtract.h>
+#include <aubio.h>
 #include "himem.h"
 #include "pcm.h"
 #include "adpcm.h"
@@ -15,7 +14,8 @@
 
 // show help message
 static void show_help_message() {
-  printf("usage: kmdgen [options] <input-file[.pcm|.s(32|44|48)|.m(32|44|48)|.a(32|44|48)|.n(32|44|48)]>\n");
+//  printf("usage: kmdgen [options] <input-file[.pcm|.s(32|44|48)|.m(32|44|48)|.a(32|44|48)|.n(32|44|48)]>\n");
+  printf("usage: kmdgen [options] <input-file[.s(32|44|48)|.m(32|44|48)]>\n");
   printf("options:\n");
   printf("     -m<n> ... output time chart lines every <n> measures (1-32,default:4)\n");
   printf("     -s<n> ... skip <n> measures before starting output (0-999,default:0)\n");
@@ -94,11 +94,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   int32_t pcm_freq = 15625;
   int16_t pcm_channels = 1;
   int16_t pcm_format = FORMAT_ADPCM;
-  if (stricmp(".pcm", pcm_file_exp) == 0) {
-    pcm_freq = 15625;                 // fixed
-    pcm_channels = 1;
-    pcm_format = FORMAT_ADPCM;
-  } else if (stricmp(".s32", pcm_file_exp) == 0) {
+  if (stricmp(".s32", pcm_file_exp) == 0) {
     pcm_freq = 32000;
     pcm_channels = 2;
     pcm_format = FORMAT_PCM;
@@ -122,6 +118,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
     pcm_freq = 48000;
     pcm_channels = 1;
     pcm_format = FORMAT_PCM;
+/*
   } else if (stricmp(".a32", pcm_file_exp) == 0) {
     pcm_freq = 32000;
     pcm_channels = 2;
@@ -146,6 +143,11 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
     pcm_freq = 48000;
     pcm_channels = 1;
     pcm_format = FORMAT_NAS_ADPCM;
+  } else if (stricmp(".pcm", pcm_file_exp) == 0) {
+    pcm_freq = 15625;                 // fixed
+    pcm_channels = 1;
+    pcm_format = FORMAT_ADPCM;
+*/
   }
 
   // encoder, decoder and chain tables
@@ -201,40 +203,118 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   printf("PCM channels  : %s\n", pcm_channels == 1 ? "mono" : "stereo");
   printf("PCM length    : %4.2f [sec]\n", (float)pcm_file_size / pcm_1sec_size);
 
-  // buffer allocation for xtract
-  size_t xtract_buffer_len = LIBXTRACT_FRAME_SIZE;
-  xtract_pcm_buffer = (float*)himem_malloc(sizeof(float) * xtract_buffer_len, 0);
+  float* decode_buffer = (float*)himem_malloc( AUBIO_FRAME_SIZE * pcm_channels * sizeof(float), 0);
 
-  // initialize LibXtract
-  xtract_t xtract;
-  xtract_init(&xtract, LIBXTRACT_FRAME_SIZE, XTRACT_REAL_TIME);
+  // buffer allocation for aubio
+  uint_t aubio_buffer_size = AUBIO_FRAME_SIZE * pcm_channels;
+//  fvec_t* aubio_buffer = new_fvec( AUBIO_FRAME_SIZE * pcm_channels );
+  fvec_t* aubio_buffer = new_fvec( AUBIO_HOP_SIZE );
+  aubio_tempo_t* aubio_tempo = new_aubio_tempo("default", AUBIO_FRAME_SIZE, AUBIO_HOP_SIZE, pcm_freq);
 
-  // set parameters for onset detection
-  xtract_set_onset_method(&xtract, XTRACT_ONSET_HFC);
-  xtract_set_peak_threshold(&xtract, LIBXTRACT_THRESHOLD);
+  uint_t n_frames = 0;
+  uint_t frames_read = 0;
+  uint_t last_beat_pos = 0;
+  uint_t measure_count = 0;
 
-  // set parameters for tempo detection
-  xtract_set_bpm_range(&xtract, LIBXTRACT_BPM_RANGE);
+  //printf("Measure\tStart Time\tEnd Time\n");
 
-  // initialize onset detection and tempo detection
-  xtract_onset_init(&xtract);
-  xtract_tempo_init(&xtract);
+  aubio_source_t* aubio_source = new_aubio_source(pcm_file_name, pcm_freq, AUBIO_HOP_SIZE);
+
+  // create some vectors
+//  fvec_t * in = new_fvec (AUBIO_HOP_SIZE); // input audio buffer
+  fvec_t * aubio_out = new_fvec (1); // output position
+  // create tempo object
+//  aubio_tempo_t * o = new_aubio_tempo("default", AUBIO_FRAME_SIZE, AUBIO_HOP_SIZE, pcm_freq);
+
+  printf("\n");
+/*
+  do {
+    printf("\rAnalyzing ... %d frames",n_frames);
+    if (B_SFTSNS() & 0x01) break;
+    // put some fresh data in input vector
+    aubio_source_do(aubio_source, aubio_buffer, &frames_read);
+    // execute tempo
+    aubio_tempo_do(aubio_tempo, aubio_buffer, aubio_out);
+    // do something with the beats
+    if (aubio_out->data[0] != 0 && aubio_tempo_get_bpm(aubio_tempo) < 300) {
+      printf("\nbeat at %.3fms, %.3fs, frame %d, %.2f bpm "
+          "with confidence %.2f\n",
+          aubio_tempo_get_last_ms(aubio_tempo), aubio_tempo_get_last_s(aubio_tempo),
+          aubio_tempo_get_last(aubio_tempo), aubio_tempo_get_bpm(aubio_tempo),
+          aubio_tempo_get_confidence(aubio_tempo));
+    }
+    n_frames += frames_read;
+  } while ( frames_read == AUBIO_HOP_SIZE );
+  printf("\nread %.2fs, %d frames at %dHz (%d blocks) from %s\n",
+      n_frames * 1. / pcm_freq,
+      n_frames, pcm_freq,
+      n_frames / AUBIO_HOP_SIZE, pcm_file_name);
+*/
+
+  fvec_t* tempo_out = new_fvec(2);
+
+  do {
+
+    printf("\rAnalyzing ... %d frames",n_frames);
+    if (B_SFTSNS() & 0x01) break;
+
+    aubio_source_do(aubio_source, aubio_buffer, &frames_read);
+
+    // compute tempo and beat positions for current frame
+
+    aubio_tempo_do(aubio_tempo, aubio_buffer, tempo_out);
+
+    // Check if beat position has changed since last frame
+    uint_t beat_pos = (uint_t) fvec_get_sample(tempo_out, 0);
+    if (beat_pos != last_beat_pos) {
+
+      // Compute measure number for current beat position
+      uint_t measure_num = measure_count / 4 + 1;
+
+      // Compute start and end time of current measure
+      float measure_start_time = (float) last_beat_pos / pcm_freq;
+      float measure_end_time = (float) beat_pos / pcm_freq;
+
+      // Output measure information
+      printf("\n%u\t%.2f\t%.2f\n", measure_num, measure_start_time, measure_end_time);
+
+      // Increment measure count
+      measure_count++;
+    }
+
+    // Update last beat position
+    last_beat_pos = beat_pos;
+    n_frames += frames_read;
+  } while (frames_read == AUBIO_HOP_SIZE);
 
 
+    del_fvec(tempo_out);
 
   rc = 0;
 
 catch:
+  // reclaim aubio resources
+  if (aubio_tempo != NULL) {
+    del_aubio_tempo(aubio_tempo);
+    aubio_tempo = NULL;
+  }
+  if (aubio_buffer != NULL) {
+    del_fvec(aubio_buffer);
+    aubio_buffer = NULL;
+  }
+  if (aubio_source != NULL) {
+    del_aubio_source(aubio_source);
+    aubio_source = NULL;
+  }
+  if (decode_buffer != NULL) {
+    himem_free(decode_buffer, 0);
+    decode_buffer = NULL;
+  }
+
   // close pcm file
   if (fp != NULL) {
     fclose(fp);
     fp = NULL;
-  }
-
-  // reclaim xtract pcm buffer
-  if (xtract_pcm_buffer != NULL) {
-    himem_free(xtract_pcm_buffer, 0);
-    xtract_pcm_buffer = NULL;
   }
 
   // close adpcm decoder

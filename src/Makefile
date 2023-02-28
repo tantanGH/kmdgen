@@ -16,8 +16,8 @@ CC = ${XDEV68K_DIR}/m68k-toolchain/bin/m68k-elf-gcc
 GAS2HAS = perl ${XDEV68K_DIR}/util/x68k_gas2has.pl -cpu 68000 -inc doscall.inc -inc iocscall.inc
 RUN68 = ${XDEV68K_DIR}/run68/run68
 HAS = $(RUN68) ${XDEV68K_DIR}/x68k_bin/HAS060.X
-HLK = $(RUN68) ${XDEV68K_DIR}/x68k_bin/hlk301.x
-#HLK = $(RUN68) ${XDEV68K_DIR}/x68k_bin/LK.X
+#HLK = $(RUN68) ${XDEV68K_DIR}/x68k_bin/hlk301.x
+HLK = $(RUN68) ${XDEV68K_DIR}/x68k_bin/LK.X
 
 # 実行ファイル名
 TARGET_FILE = KMDGEN.X
@@ -29,14 +29,15 @@ DOCUMENT_FILE = KMDGEN.DOC
 PACKAGE_FILE = ../KMDGN010.ZIP
 
 # ヘッダ検索パス
-INCLUDE_FLAGS = -I${XDEV68K_DIR}/include/xc -I${XDEV68K_DIR}/include/xdev68k -I${XDEV68K_DIR}/include/xtract
+INCLUDE_FLAGS = -I${XDEV68K_DIR}/include/xc -I${XDEV68K_DIR}/include/xdev68k -I${XDEV68K_DIR}/include/aubio
 
 # コンパイルフラグ
 COMMON_FLAGS = -m68000 -Os $(INCLUDE_FLAGS)
 #COMMON_FLAGS = -m68060 -msoft-float -Os $(INCLUDE_FLAGS)
 CFLAGS = $(COMMON_FLAGS) -fno-conserve-stack -Wno-builtin-declaration-mismatch -fcall-used-d2 \
-				-finput-charset=cp932 -fexec-charset=cp932 -fcall-used-a2 -fverbose-asm \
-				-D_TIME_T_DECLARED -D_CLOCK_T_DECLARED
+				-fexec-charset=cp932 -fcall-used-a2 -fverbose-asm \
+				-D_TIME_T_DECLARED -D_CLOCK_T_DECLARED \
+				-DHAVE_CONFIG_H -DHAVE_AUBIO_DOUBLE=1
 
 # *.c ソースファイル
 C_SRCS = himem.c pcm.c adpcm.c nas_adpcm.c main.c
@@ -53,7 +54,7 @@ LIBS =\
 	${XDEV68K_DIR}/lib/xc/DOSLIB.L \
 	${XDEV68K_DIR}/lib/xc/IOCSLIB.L \
 	${XDEV68K_DIR}/lib/xc/FLOATFNC.L \
-	${XDEV68K_DIR}/lib/xtract/libxtract.a \
+	${XDEV68K_DIR}/lib/aubio/libaubio.a \
 	${XDEV68K_DIR}/lib/m68k_elf/m68000/libgcc.a
 
 #	${XDEV68K_DIR}/lib/mad/libmad-optspeed.a \
@@ -91,7 +92,7 @@ ${INTERMEDIATE_DIR}/$(TARGET_FILE) : $(OBJS)
 		echo $(INTERMEDIATE_DIR)/`basename $$FILENAME` >> $(HLK_LINK_LIST); \
         done
 	$(HLK) -i $(HLK_LINK_LIST) -o ${INTERMEDIATE_DIR}/$(TARGET_FILE)
-#	rm -f tmp*.\$$\$$\$$
+	rm -f tmp*.\$$\$$\$$
 
 # *.c ソースのコンパイル
 $(INTERMEDIATE_DIR)/%.o : %.c Makefile $(HEADER_SRCS)

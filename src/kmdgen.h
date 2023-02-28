@@ -9,9 +9,7 @@
 #define FORMAT_PCM       (1)
 #define FORMAT_NAS_ADPCM (2)
 
-#define LIBXTRACT_FRAME_SIZE (2048)
-#define LIBXTRACT_HOP_SIZE   (512)
-#define LIBXTRACT_THRESHOLD  (0.5)
-#define LIBXTRACT_BPM_RANGE  (20)
+#define AUBIO_FRAME_SIZE (2048)
+#define AUBIO_HOP_SIZE   (512)
 
 #endif
