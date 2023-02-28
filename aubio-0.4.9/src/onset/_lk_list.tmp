@@ -1,7 +1,0 @@
-_build/onset.o
-_build/peakpicker.o
-CLIB.L
-DOSLIB.L
-IOCSLIB.L
-FLOATFNC.L
-libgcc.a

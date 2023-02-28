@@ -1,7 +1,0 @@
-_build/sampler.o
-_build/wavetable.o
-CLIB.L
-DOSLIB.L
-IOCSLIB.L
-FLOATFNC.L
-libgcc.a
