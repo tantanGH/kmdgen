@@ -73,20 +73,6 @@ static unsigned int read_little_endian (unsigned char *buf,
   return ret;
 }
 
-static unsigned int read_big_endian (unsigned char *buf,
-    unsigned int length);
-
-static unsigned int read_big_endian (unsigned char *buf,
-    unsigned int length)
-{
-  uint_t i, ret = 0;
-  for (i = 0; i < length; i++) {
-    //ret += buf[i] << (i * 8);
-    ret = (ret << 8) + buf[i];
-  }
-  return ret;
-}
-
 aubio_source_s44read_t * new_aubio_source_s44read(const char_t * path, uint_t samplerate, uint_t hop_size) {
   aubio_source_s44read_t * s = AUBIO_NEW(aubio_source_s44read_t);
   size_t bytes_read = 0; //, bytes_junk = 0, bytes_expected = 44;
@@ -300,6 +286,9 @@ aubio_source_s44read_t * new_aubio_source_s44read(const char_t * path, uint_t sa
   // Subchunk2Size
 //  bytes_read += fread(buf, 1, 4, s->fid);
 //  duration = read_little_endian(buf, 4) / blockalign;
+  fseek(s->fid, 0, SEEK_END);
+  duration = ftell(s->fid) / channels / 2;      // number of frames
+  fseek(s->fid, 0, SEEK_SET);
 
   //data_size = buf[0] + (buf[1] << 8) + (buf[2] << 16) + (buf[3] << 24);
   //AUBIO_MSG("found %d frames in %s\n", 8 * data_size / bitspersample / channels, s->path);
@@ -342,6 +331,7 @@ void aubio_source_s44read_readframe(aubio_source_s44read_t *s, uint_t *s44read_r
 
 void aubio_source_s44read_readframe(aubio_source_s44read_t *s, uint_t *s44read_read) {
   unsigned char *short_ptr = s->short_output;
+  signed short *short16_ptr = (signed short*)(s->short_output);
   size_t read = fread(short_ptr, s->blockalign, AUBIO_S44READ_BUFSIZE, s->fid);
   uint_t i, j, b, bitspersample = s->bitspersample;
   uint_t wrap_at = (1 << ( bitspersample - 1 ) );
@@ -352,6 +342,9 @@ void aubio_source_s44read_readframe(aubio_source_s44read_t *s, uint_t *s44read_r
 
   for (j = 0; j < read; j++) {
     for (i = 0; i < s->input_channels; i++) {
+      s->output->data[i][j] = *short16_ptr / 32768.0;
+      short16_ptr++;
+/*
       unsigned_val = 0;
       for (b = 0; b < bitspersample; b+=8 ) {
         //unsigned_val += *(short_ptr) << b;                    // little endian
@@ -364,6 +357,7 @@ void aubio_source_s44read_readframe(aubio_source_s44read_t *s, uint_t *s44read_r
       if (bitspersample == 8) signed_val -= wrap_at;
       else if (unsigned_val >= wrap_at) signed_val = unsigned_val - wrap_with;
       s->output->data[i][j] = signed_val * scaler;
+*/
     }
   }
 

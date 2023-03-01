@@ -210,7 +210,12 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
 
   printf("PCM frequency : %d [Hz]\n", pcm_freq);
   printf("PCM channels  : %s\n", pcm_channels == 1 ? "mono" : "stereo");
-  printf("PCM length    : %4.2f [sec]\n", aubio_source_get_duration(aubio_source));
+
+  uint32_t pcm_duration = aubio_source_get_duration(aubio_source);
+  if (pcm_duration > 0) {
+    printf("PCM length    : %4.2f [sec]\n", (float)pcm_duration / (float)pcm_freq);
+    printf("PCM duration  : %d [frames]\n", pcm_duration);
+  }
 
   float* decode_buffer = (float*)himem_malloc( AUBIO_FRAME_SIZE * pcm_channels * sizeof(float), 0);
 
