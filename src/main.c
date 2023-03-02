@@ -3,26 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stat.h>
-#include <doslib.h>
-#include <iocslib.h>
-#include <aubio.h>
-#include "himem.h"
-//#include "pcm.h"
-//#include "adpcm.h"
-//#include "nas_adpcm.h"
 #include "kmdgen.h"
 
 // show help message
 static void show_help_message() {
-//  printf("usage: kmdgen [options] <input-file[.pcm|.s(32|44|48)|.m(32|44|48)|.a(32|44|48)|.n(32|44|48)]>\n");
-  printf("usage: kmdgen [options] <input-file[.s(32|44|48)|.m(32|44|48)]>\n");
-  printf("options:\n");
-  printf("     -m<n> ... output time chart lines every <n> measures (1-32,default:4)\n");
-  printf("     -s<n> ... skip <n> measures before starting output (0-999,default:0)\n");
-  printf("     -q    ... quiet mode\n");
-  printf("     -l    ... assume s32/s44/s48 as little endian 16bit raw PCM format\n");
-  printf("     -h    ... show help message\n");
-  printf("     -o <out-name> ... output file name (default:auto assign)\n");
+  printf("usage: kmdgen <bpm> <out-file>\n");
 }
 
 // main
@@ -34,9 +19,15 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   // credit
   printf("KMDGEN.X - KMD file template generator for X680x0 version " VERSION " by tantan\n");
 
-  // parse command line options
-  uint8_t* pcm_file_name = NULL;
-  int16_t measure_interval = 4;
+  // parse commands
+  uint8_t* kmd_file_name = NULL;
+  int16_t bpm = 0;
+  
+  if (argc < 3) {
+    show_help_me
+  }
+  
+  measure_interval = 4;
   int16_t measure_skip = 0;
   int16_t quiet_mode = 0;
   int16_t use_little_endian = 0;
