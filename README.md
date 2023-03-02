@@ -3,7 +3,8 @@
 KMD file template generator for X680x0/Human68k
 
 BPM値その他のパラメータを与えて、KMDファイルのテンプレート(タイムチャート)を自動生成するツールです。
-kmdgen.py をCに移植したものになります。
+
+[kmdgen.py](https://github.com/tantanGH/mp3exp/blob/main/README.md#kmd%E6%AD%8C%E8%A9%9E%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%83%86%E3%83%B3%E3%83%97%E3%83%AC%E3%83%BC%E3%83%88%E4%BD%9C%E6%88%90%E3%83%84%E3%83%BC%E3%83%AB) をCで書き直して.X実行ファイル形式にしたものになります。
 
 ---
 
@@ -15,20 +16,19 @@ KMDGNxxx.ZIP をダウンロードして展開し、KMDGEN.X をパスの通っ�
 
 ### How to use
 
-kmdgen.py <total-seconds> <bpm> <beat-interval> <beat-skip> <event-offset> <erase-offset> <out-file>
+    KMDGEN.X <total-seconds> <bpm> <beat-interval> <beat-skip> <event-offset> <erase-offset> <out-file>
 
-などとして実行します。
+として7つのコマンドラインパラメータを与えて実行します。
 
 `total-seconds` ... 曲のトータル時間を秒単位で指定します。
 
-`bpm` ... 対象となる曲のBPM(1分間に何拍打つか)を指定します。BPMを知るには、
+`bpm` ... 対象となる曲のBPM(1分間に何拍打つか)を指定します。小数点指定可能。BPMを知るには、
 
 - [BPMCHK.X](https://github.com/tantanGH/bpmchk) や [aubio](https://aubio.org/)などのツールを使って調べる
 - メトロノームアプリやYoutubeのBPM動画などを合わせて再生して自分で調べる
 - スマホアプリやWebの無料サービスなどを使って調べる。 
 
-などの方法があります。自分は macOSで aubio を使っています。
-BPMCHK.X は aubio ライブラリをS44対応改造し、x68k向けにコンパイルしてBPM算出に特化したツールです。
+などの方法があります。BPMCHK.X は aubio ライブラリをS44対応改造し、x68k向けにコンパイルしてBPM算出に特化したツールです。
 
 いくつかテンプレートをBPMをずらして作ってみて再生し、しっくりくるものをベースに編集に入るのも良いと思います。
 出力されたテンプレートはダミーメッセージが入っていますがそのまますぐに SMR.X / MP3EXP.X で再生可能です。
