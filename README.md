@@ -2,17 +2,9 @@
 
 KMD file template generator for X680x0/Human68k
 
-PCM/S44/A44データをaubioライブラリを使って音響解析し、テンポ・ビート・小節・楽器構成変化を捉えてKMDファイルのタイミングテーブルとして出力します。歌詞ディクテーション機能は無いのでそこは人力でお願いしますw
+BPM値その他のパラメータを与えて、KMDファイルのテンプレート(タイムチャート)を自動生成するツールです。
 
-KMD再生の前にデータが無いことには始まらない...けどゼロからタイミング情報を拾っていくのも大変...ということでまずはデータ作成支援(ﾟ∀ﾟ ) 
-
-以下の形式のPCMデータに対応しています。ファイルの種類は拡張子で判別されます。
-
-- X680x0 (MSM6258V) ADPCM 15.6kHz mono (.PCM)
-- 16bit raw PCM (big endian) 32kHz/44.1kHz/48kHz stereo/mono (.S44/.M44など)
-- YM2608 ADPCM 32kHz/44.1kHz/48kHz stereo/mono (.A44/.N44など)
-
-KMDファイルは Mercury-Unit 対応プレーヤ・レコーダの標準的ソフトである SMR.X を使ってPCMデータと共に再生することのできる歌詞データファイルです。
+[kmdgen.py](https://github.com/tantanGH/mp3exp/blob/main/README.md#kmd%E6%AD%8C%E8%A9%9E%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%83%86%E3%83%B3%E3%83%97%E3%83%AC%E3%83%BC%E3%83%88%E4%BD%9C%E6%88%90%E3%83%84%E3%83%BC%E3%83%AB) をCで書き直して.X実行ファイル形式にしたものになります。
 
 ---
 
@@ -24,33 +16,46 @@ KMDGNxxx.ZIP をダウンロードして展開し、KMDGEN.X をパスの通っ�
 
 ### How to use
 
-引数をつけずに実行するか、`-h` オプションをつけて実行するとヘルプメッセージが表示されます。
+    KMDGEN.X <total-seconds> <bpm> <beat-interval> <beat-skip> <event-offset> <erase-offset> <out-file>
 
-    KMDGEN.X - KMD file template generator for X680x0 version 0.x.x by tantan
-    usage: kmdgen.x [options] <pcm-file>
-    options:
-      -m<n> ... 何小節ごとにタイミングを出力するか (default:4)
-      -s<n> ... 出だしの何小節をスキップしてからタイミングの出力を開始するか
-      -q ... 画面表示を行わずにファイルの書き出しのみとする
-      -l ... 16bit raw PCM ファイルを little endian とみなす
-      -h ... show help message
-      -o <out-name> ... output filename (default:auto assign)
+として7つのコマンドラインパラメータを与えて実行します。
 
-`-m`オプションで何小節ごとにタイミングデータを出力するか指定できます。デフォルトは4です。
+`total-seconds` ... 曲のトータル時間を秒単位で指定します。
 
-`-s`オプションで出だしの何小節をスキップしてからタイミングデータを出力し始めるか指定できます。デフォルトは0です。
+`bpm` ... 対象となる曲のBPM(1分間に何拍打つか)を指定します。小数点指定可能。BPMを知るには、
 
-`-q`オプションで画面出力を行わずにファイルの書き出しのみとします。デフォルトでは画面にもタイミング情報が出力されます。
+- [BPMCHK.X](https://github.com/tantanGH/bpmchk) や [aubio](https://aubio.org/)などのツールを使って調べる
+- メトロノームアプリやYoutubeのBPM動画などを合わせて再生して自分で調べる
+- スマホアプリやWebの無料サービスなどを使って調べる。 
 
-`-l`オプションで16bit raw PCMを符号付きlittle endian扱いとします。なお.S44の仕様はbig endianですので、特別な変換を行なったケースでのみ有効です。
+などの方法があります。BPMCHK.X は aubio ライブラリをS44対応改造し、x68k向けにコンパイルしてBPM算出に特化したツールです。
 
-`-o`オプションで出力ファイル名を指定します。これを省略した場合、元のPCMファイル名の拡張子を出力形式に合わせて自動的に変更したものとなります。ファイルが既に存在する場合は確認を求められます。`-o` の後にはスペースを入れる必要がありますので注意してください。
+いくつかテンプレートをBPMをずらして作ってみて再生し、しっくりくるものをベースに編集に入るのも良いと思います。
+出力されたテンプレートはダミーメッセージが入っていますがそのまますぐに SMR.X / MP3EXP.X で再生可能です。
+
+`beat-interval` ... 何拍ごとにKMDのイベント行を出力するかの指定。イベントは y0 → y2 → y0 → y2 → ... のように、y位置が交互に繰り返す形で出力されます。y1 の出力はされません。
+
+`beat-skip` ... 歌詞表示イベント行の出力を曲の出だしの何拍分スキップするかの指定。イントロ部分を飛ばしたいときなど。
+
+`event-offset` ... 歌詞表示は通常拍ぴったりではなく、やや前にすることが多いです。拍の何tick前にstを設定するかのオフセット指定です。1tickは10msec(KMDの最小時間単位)です。
+
+`erase-offset` ... 歌詞表示を消すタイミング(et)は、次のy0イベントのstの1tick前がデフォルトになります。このオフセットを指定するとさらにそれよりも指定したtick分だけ前にetを設定します。
+
+`out-file` ... 出力先のKMDファイル名です。既にファイルが存在する場合は上書きするかの確認を求められます。
+
+実行例：
+
+    kmdgen 180 120 4 6 20 10 bpm120.kmd
+
+180秒・120BPMの曲に対して4拍ごとにイベント行を出力。最初の6拍についてはスキップしイベントの出力は行わない。イベントはそれぞれの拍の20ticks(200msec)前を開始時間(st)とする。各イベントの消去時刻(et)は次のy0イベントの 10+1=11ticks(110msec)前とする。結果はbpm120.kmdに書き出す。
+
+<img src='images/kmdgen3.png' width='400'/>
+
+---
 
 ### License
 
-オーディオ特性データ抽出ライブラリとして aubio 0.4.9 をx68k向けにコンパイルしたものを利用させて頂いています。KMDGENのライセンスはaubioのライセンスに準じGPLv3となります。
-
-YM2608 ADPCM形式のエンコードライブラリとして Otankonas氏のライブラリコードの一部を当方でデバッグしたものを利用させて頂いています。
+MIT License
 
 ---
 
@@ -61,10 +66,9 @@ YM2608 ADPCM形式のエンコードライブラリとして Otankonas氏のラ�
 * HAS060.X on run68mac thanks to YuNKさん / M.Kamadaさん / GOROmanさん
 * HLK301.X on run68mac thanks to SALTさん / GOROmanさん
 * XEiJ thanks to M.Kamadaさん
-* ADPCMLIB thanks to Otankonas さん
 
 ---
 
 ### History
 
-* 0.1.0 (2023/02/28) ... 初版
+* 0.1.0 (2023/03/02) ... 初版
